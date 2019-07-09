@@ -1,81 +1,80 @@
-#ifndef MYCLASS_H_
-#define MYCLASS_H_
-#define M 8
+#ifndef PROBLEM_H_
+#define PROBLEM_H_
+#define EL_SIZE 8
 //----------------------------
-//#include "local_matrix.h"
-//#include <alloc.h>
+#include "Solver.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
 
-//----------------------------
-double right(double *x);
-void mul_c_vector(double*,double*);
-
 const double lambda = 1;
 const double gamma = 1;
 
-// Локальные области
-struct local
+// Локальные элементы
+struct ELEM
 {
 	static int count;
-	int mas[M];
+	int mas[EL_SIZE];
 	double lambda;
 	double gamma;
 };
 
 //Координаты узлов
-struct cross
+struct NODE
 {
 	double mas[3];
 	static int count;
 };
 
 
-
 class MATRIX
 {
 public:
 	int n;
-	double *d;
-	double *gg;
-	int *ig;
-	int *jg;
-
-
-	void SST(MATRIX *);
-	void mul_matrix_vector(double *vector,double *result);
-	void solution_x(double*,double*);
-	void solution_x_l(double*,double*);
-	void solution_x_u(double*,double*);
+	vector<double> di;
+	vector<double> gg;
+	vector<uint32_t> ig;
+	vector<uint32_t> jg;
 	~MATRIX();
 };
 
 
 
-class GLOBAL_MATRIX : public MATRIX
+class PROBLEM_3D: public MATRIX
 {
 private:
-	local *matr;
-	cross *set;
-	double *f;
-	double *x;
-	double *vect_v;
+	ELEM *elems;
+	NODE *nodes;
+	SymmetricSolver solver;
 
+	vector<double> f;
+	
+	vector<double> vect_v;
+	vector<double> x;
 
 public:
-	GLOBAL_MATRIX();
-	~GLOBAL_MATRIX();
-	void read_local();
-	void read_cross();
-	void formier_profil();
-	void formier_matrix();
+
+	const char *FILE_ELEM_NUMBER = "local.txt";
+	const char *FILE_NODE = "cross.txt";
+	const char *FILE_OUT;
+	const char *FILE_CRAEV_1 = "boundary.txt";
+	const char *FILE_CRAEV_2;
+	const char *FILE_CRAEV_3;
+	double POR = 1e30;
+
+	PROBLEM_3D();
+	~PROBLEM_3D();
+	void read_ELEM();
+	void read_NODE();
+	void buildPortrait();
+	void fillTheMatrix();
 	void add(int,int,double);
-	void MSG();
+	
 	void kraev_1();
 	void kraev_2();
 	void kraev_3();
 	void print_result();
+
 	bool readFromFiles(const char* inf,  const char *xyz, const char *nver) {
 		FILE* file = fopen(inf, "r");
 		if (file == NULL) return false;
@@ -84,13 +83,13 @@ public:
 		fclose(file);
 
 		
-		cross::count = nodes_size ;
-		local::count = el_size;
-		n = cross::count;
+		NODE::count = nodes_size ;
+		ELEM::count = el_size;
+		n = NODE::count;
 
 
-		set = new cross[nodes_size];
-		matr = new local[local::count];
+		nodes = new NODE[nodes_size];
+		elems = new ELEM[ELEM::count];
 
 		int *tmp = new int[el_size];
 		size_t t;
@@ -109,31 +108,38 @@ public:
 		//Преобразуем считанные данные в массивы
 		double a[3];
 		for (int i = 0, k = 0; i < 3 * nodes_size; i += 3, k++) {
-			set[k].mas[0] = tmp1[i];
-			set[k].mas[1] = tmp1[i + 1];
-			set[k].mas[2] = tmp1[i + 2];
+			nodes[k].mas[0] = tmp1[i];
+			nodes[k].mas[1] = tmp1[i + 1];
+			nodes[k].mas[2] = tmp1[i + 2];
 		}
 
 		for (int i = 0, k = 0; k < el_size; k++, i = i + 14) {
 			for (int j = 0; j < 8; j++) {
-				matr[k].mas[j] = tmp2[i + j];
-				matr[k].lambda = lambda;
-				matr[k].gamma = gamma;
+				elems[k].mas[j] = tmp2[i + j];
+				elems[k].lambda = lambda;
+				elems[k].gamma = gamma;
 			}
 		}
+
+		di.resize(n);
+		f.resize(n);
+		x.resize(n);
+		ig.resize(n + 1);
 
 		return true;
 	};
 
 	double U(double nx, double y, double z);
 	double get_psi(int num_fe, int num_basis, double x,double y, double z);
-	const char *FILE_LOCAL_NUMBER;
-	const char *FILE_CROSS;
-	const char *FILE_OUT;
-	const char *FILE_CRAEV_1;
-	const char *FILE_CRAEV_2;
-	const char *FILE_CRAEV_3;
-	double POR;
+
+	void solveMatrix() {
+		for (int i = 0; i < ig.size(); i++)
+			ig[i]--;
+		for (int i = 0; i < jg.size(); i++)
+			jg[i]--;
+		solver.Solve(gg, di, ig, jg, f, x);
+	}
+
 };
 
 #endif

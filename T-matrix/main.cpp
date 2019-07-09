@@ -1,15 +1,15 @@
-#include "myclass.h"
-#include <conio.h>
+#include "problem.h"
 
 int main()
 {
-	GLOBAL_MATRIX my;	
-	//my.kraev_2();
-	//my.kraev_3();
-	//my.kraev_1();
-	my.MSG();
-	my.print_result();
-	double res;
-	res = my.U(1.5, 0.5, 0.5);
+	PROBLEM_3D problem;
+	problem.readFromFiles("../Test_Mesh/inftry.dat", "../Test_Mesh/xyz.dat", "../Test_Mesh/nver.dat");
+
+	problem.buildPortrait();
+	problem.fillTheMatrix();
+	problem.solveMatrix();
+	//problem.MSG();
+	problem.print_result();
+	system("pause");
 	return 0;
 }
