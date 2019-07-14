@@ -3,7 +3,7 @@
 //---------------------------------------------------------------------------
 double c[EL_SIZE][EL_SIZE]={{8},{4,8},{4,2,8},{2,4,4,8},{4,2,2,1,8},
 {2,4,1,2,4,8},{2,1,4,2,4,2,8},{1,2,2,4,2,4,4,8}};
-double bx[EL_SIZE][EL_SIZE]={{4},{-4,4},{2,-2,4},{-2,2,-4,4},{2,-2,1,-1,4,4},
+double bx[EL_SIZE][EL_SIZE]={{4},{-4,4},{2,-2,4},{-2,2,-4,4},{2,-2,1,-1,4},
 {-2,2,-1,1,-4,4},{1,-1,2,-2,2,-2,4},{-1,1,-2,2,-2,2,-4,4}};
 double by[EL_SIZE][EL_SIZE]={{4},{2,4},{-4,-2,4},{-2,-4,2,4},{2,1,-2,-1,4},
 {1,2,-1,-2,2,4},{-2,-1,2,1,-4,-2,4},{-1,-2,1,2,-2,-4,2,4}};
@@ -11,20 +11,29 @@ double bz[EL_SIZE][EL_SIZE]={{4},{2,4},{2,1,4},{1,2,2,4},{-4,-2,-2,-1,4},
 {-2,-4,-1,-2,2,4},{-2,-1,-4,-2,2,1,4},{-1,-2,-2,-4,1,2,2,4}};
 double right_vector[EL_SIZE];
 double c1[EL_SIZE /2][EL_SIZE /2]={{4},{2,4},{2,1,4},{1,2,2,4}};
-double rf_v[EL_SIZE][EL_SIZE]={{-4,4,-2,2,-2,2,-1,1},{-4,4,-2,2,-2,2,-1,1},
-{-2,2,-4,4,-1,1,-2,2},{-2,2,-4,4,-1,1,-2,2}};
 
-// div( lambga grad(u)) = right
+
+// -div( lambga grad(u)) + gamma *u  = right
 
 double right(double *x)
 {
-	return (x[0] + x[1] + x[2]);
+	return x[0] + x[1] + x[2];
 
 }
 double u_real(double *x)
 {
-	return (x[0] * x[0] + x[1] * x[1] + x[2] * x[2]);
+	return x[0] + x[1] + x[2];
+}
 
+int my(int i) {
+	return i % 2;
+}
+int v(int i) {
+	return (i/2) % 2;
+}
+//у с хвостиком
+int u(int i) {
+	return i / 4;
 }
 
 //--------------------------------
@@ -88,7 +97,7 @@ void PROBLEM_3D::read_ELEM()
 	
 	for(int i=0;i<ELEM::count;i++) {
 		for(int j=0;j<EL_SIZE;j++)
-			fscanf(f,"%d",&elems[i].mas[j]);
+			fscanf(f,"%d",&elems[i].value[j]);
 		fscanf(f,"%lf %lf",&elems[i].lambda,&elems[i].gamma);
 	}
 
@@ -105,13 +114,13 @@ void PROBLEM_3D::read_NODE()
 
 	for(int i=0;i<NODE::count;i++)
 		for(int j=0;j<3;j++)
-			fscanf(f,"%lf",&nodes[i].mas[j]);
+			fscanf(f,"%lf",&nodes[i].value[j]);
 
 	for(int i=0;i<NODE::count;i++)
 	{
 	printf("\n");
 	for(int j=0;j<3;j++)
-	printf("%2.1f ",nodes[i].mas[j]);
+	printf("%2.1f ",nodes[i].value[j]);
 	} 
 	fclose(f);
 }
@@ -131,7 +140,7 @@ void PROBLEM_3D::buildPortrait()
 	for(int k=0;k<ELEM::count;k++)
 		for(int i=0;i<EL_SIZE;i++)
 			for(int j=i+1;j<EL_SIZE;j++) {
-				int i1 = elems[k].mas[i], j1 = elems[k].mas[j], k_b;
+				int i1 = elems[k].value[i], j1 = elems[k].value[j], k_b;
 				if(i1<j1) {
 					k_b=i1;
 					i1=j1;
@@ -183,13 +192,6 @@ void PROBLEM_3D::add(int i,int j,double x)
 void PROBLEM_3D::fillTheMatrix()
 {
 	double h[3];
-	for (int i = 0; i < n; i++) {
-		di[i] = 0.0;
-		f[i] = 0.0;
-	}
-	for (int i = 0; i < ig[n] - 1; i++) {
-		gg[i] = 0.0;
-	}
 	for (int k = 0; k < ELEM::count; k++)
 	{
 		//Вычисление шага
@@ -200,11 +202,11 @@ void PROBLEM_3D::fillTheMatrix()
 			for (j = 1; j< EL_SIZE && flag; j++) {//1 узел фиксируем,пробегаем по остальным    
 				flag = 0;
 				for (int l = 0; l < 3 && !flag; l++)//проверяем,лежат ли точки на нужном ребре
-					if (i != l && nodes[elems[k].mas[0] - 1].mas[l] != nodes[elems[k].mas[j] - 1].mas[l])
+					if (i != l && nodes[elems[k].value[0] - 1].value[l] != nodes[elems[k].value[j] - 1].value[l])
 						flag = 1;
 			}
 			if (!flag)
-				h[i] = fabs(nodes[elems[k].mas[0] - 1].mas[i] - nodes[elems[k].mas[j - 1] - 1].mas[i]);
+				h[i] = fabs(nodes[elems[k].value[0] - 1].value[i] - nodes[elems[k].value[j - 1] - 1].value[i]);
 		}
 		//------------------------------------------------------------
 		//формирование элементов матрицы
@@ -219,14 +221,15 @@ void PROBLEM_3D::fillTheMatrix()
 
 		//вектор правой части для локал. матрицы
 		for (int i = 0; i< EL_SIZE; i++)
-			right_vector[i] = right(nodes[elems[k].mas[i] - 1].mas);
+			right_vector[i] = right(nodes[elems[k].value[i] - 1].value);
 
 		mul_c_vector(right_vector, fr);
 
 		for (int i = 0; i< EL_SIZE; i++) {
 			for (int j = 0; j < i; j++) {
-				int i1 = elems[k].mas[i] - 1;
-				int j1 = elems[k].mas[j] - 1;
+				int i1 = elems[k].value[i] - 1;
+				int j1 = elems[k].value[j] - 1;
+
 				double s = elems[k].gamma*c_k*c[i][j] + b_k / (h[0] * h[0])*bx[i][j] +
 					b_k / (h[1] * h[1])*by[i][j] + b_k / (h[2] * h[2])*bz[i][j];
 
@@ -236,11 +239,13 @@ void PROBLEM_3D::fillTheMatrix()
 				else
 					add(i1, j1, s);
 			}
+
 			//добавка в диагональ
-			di[elems[k].mas[i] - 1] += c_k * elems[k].gamma*c[i][i] + b_k / (h[0] * h[0])*bx[i][i] +
+			di[elems[k].value[i] - 1] += c_k * elems[k].gamma*c[i][i] + b_k / (h[0] * h[0])*bx[i][i] +
 				b_k / (h[1] * h[1])*by[i][i] + b_k / (h[2] * h[2])*bz[i][i];
+
 			//добавка в правую часть
-			f[elems[k].mas[i] - 1] += c_k * fr[i];
+			f[elems[k].value[i] - 1] += c_k * fr[i];
 		}
 	}
 }
@@ -264,10 +269,10 @@ void PROBLEM_3D::print_result()
 	FILE *f=fopen("resault.txt","w");
 	for (int i = 0; i < n; i++)
 	{
-		double *real_f = new double[n];
-		real_f[i] = right(nodes[i].mas);
+		double *real_solution = new double[n];
+		real_solution[i] = u_real(nodes[i].value);
 
-		fprintf(f, "%.3lf %.3lf %.3lf %.15lf %.15lf\n", nodes[i].mas[0], nodes[i].mas[1], nodes[i].mas[2], x[i] , real_f[i]);
+		fprintf(f, "%.3lf %.3lf %.3lf %.15lf %.15lf %.15lf\n", nodes[i].value[0], nodes[i].value[1], nodes[i].value[2], x[i], real_solution[i],abs(real_solution[i]- x[i]));
 	}
 	fclose(f);
 }
@@ -282,7 +287,7 @@ void PROBLEM_3D::kraev_1()
 	if (fl==NULL) return;
 	int flag;
 	while((flag=fscanf(fl,"%d",&i))>0) {
-		q = right(nodes[i].mas);
+		q = right(nodes[i].value);
 		di[i]=1;
 		f[i]=q;
 
@@ -326,10 +331,10 @@ void PROBLEM_3D::kraev_3()
 		double eps = 1e-12;
 		double hx = 0.0, hy = 0.0;
 		for(int i = 0; i < 3; i++) {
-			double tmp = fabs(nodes[cr[0]-1].mas[i]-nodes[cr[1]-1].mas[i]);
+			double tmp = fabs(nodes[cr[0]-1].value[i]-nodes[cr[1]-1].value[i]);
 			if(tmp > eps)
 				hx += tmp;
-			tmp = fabs(nodes[cr[0]-1].mas[i]-nodes[cr[2]-1].mas[i]);
+			tmp = fabs(nodes[cr[0]-1].value[i]-nodes[cr[2]-1].value[i]);
 			if(tmp > eps)
 				hy += tmp;
 		}
@@ -372,10 +377,10 @@ void PROBLEM_3D::kraev_2()
 		double eps=1e-12;
 		double hx = 0.0, hy = 0.0;
 		for(int i = 0; i < 3; i++) {
-			double tmp = fabs(nodes[cr[0]-1].mas[i]-nodes[cr[1]-1].mas[i]);
+			double tmp = fabs(nodes[cr[0]-1].value[i]-nodes[cr[1]-1].value[i]);
 			if(tmp > eps)
 				hx += tmp;
-			tmp = fabs(nodes[cr[0]-1].mas[i]-nodes[cr[2]-1].mas[i]);
+			tmp = fabs(nodes[cr[0]-1].value[i]-nodes[cr[2]-1].value[i]);
 			if(tmp > eps)
 				hy += tmp;
 		}
@@ -398,37 +403,37 @@ double PROBLEM_3D::get_psi(int num_fe, int num_basis, double x,double y, double 
 {
     int n1,n2,n3,n5;
     double hx,hy,hz;
-    n1=elems[num_fe].mas[0];
-    n2=elems[num_fe].mas[1];
-    n3=elems[num_fe].mas[2];
-    n5=elems[num_fe].mas[4];
-    hx=nodes[n2-1].mas[0]-nodes[n1-1].mas[0];
-    hy=nodes[n3-1].mas[1]-nodes[n1-1].mas[1];
-    hz=nodes[n5-1].mas[2]-nodes[n1-1].mas[2];
+    n1=elems[num_fe].value[0];
+    n2=elems[num_fe].value[1];
+    n3=elems[num_fe].value[2];
+    n5=elems[num_fe].value[4];
+    hx=nodes[n2-1].value[0]-nodes[n1-1].value[0];
+    hy=nodes[n3-1].value[1]-nodes[n1-1].value[1];
+    hz=nodes[n5-1].value[2]-nodes[n1-1].value[2];
     switch(num_basis) {
 	case(0):
-		return (nodes[n2-1].mas[0]-x)/hx*(nodes[n3-1].mas[1]-y)/hy*(nodes[n5-1].mas[2]-z)/hz;
+		return (nodes[n2-1].value[0]-x)/hx*(nodes[n3-1].value[1]-y)/hy*(nodes[n5-1].value[2]-z)/hz;
 		break;
 	case(1):
-		return (x-nodes[n1-1].mas[0])/hx*(nodes[n3-1].mas[1]-y)/hy*(nodes[n5-1].mas[2]-z)/hz;
+		return (x-nodes[n1-1].value[0])/hx*(nodes[n3-1].value[1]-y)/hy*(nodes[n5-1].value[2]-z)/hz;
 		break;
 	case(2):
-		return (nodes[n2-1].mas[0]-x)/hx*(y-nodes[n1-1].mas[1])/hy*(nodes[n5-1].mas[2]-z)/hz;
+		return (nodes[n2-1].value[0]-x)/hx*(y-nodes[n1-1].value[1])/hy*(nodes[n5-1].value[2]-z)/hz;
 		break;
 	case(3):
-		return (x-nodes[n1-1].mas[0])/hx*(y-nodes[n1-1].mas[1])/hy*(nodes[n5-1].mas[2]-z)/hz;
+		return (x-nodes[n1-1].value[0])/hx*(y-nodes[n1-1].value[1])/hy*(nodes[n5-1].value[2]-z)/hz;
 		break;
 	case(4):
-		return (nodes[n2-1].mas[0]-x)/hx*(nodes[n3-1].mas[1]-y)/hy*(z-nodes[n1-1].mas[2])/hz;
+		return (nodes[n2-1].value[0]-x)/hx*(nodes[n3-1].value[1]-y)/hy*(z-nodes[n1-1].value[2])/hz;
 		break;
 	case(5):
-		return (x-nodes[n1-1].mas[0])/hx*(nodes[n3-1].mas[1]-y)/hy*(z-nodes[n1-1].mas[2])/hz;
+		return (x-nodes[n1-1].value[0])/hx*(nodes[n3-1].value[1]-y)/hy*(z-nodes[n1-1].value[2])/hz;
 		break;
 	case(6):
-		return (nodes[n2-1].mas[0]-x)/hx*(y-nodes[n1-1].mas[1])/hy*(z-nodes[n1-1].mas[2])/hz;
+		return (nodes[n2-1].value[0]-x)/hx*(y-nodes[n1-1].value[1])/hy*(z-nodes[n1-1].value[2])/hz;
 		break;
 	case(7):
-		return (x-nodes[n1-1].mas[0])/hx*(y-nodes[n1-1].mas[1])/hy*(z-nodes[n1-1].mas[2])/hz;
+		return (x-nodes[n1-1].value[0])/hx*(y-nodes[n1-1].value[1])/hy*(z-nodes[n1-1].value[2])/hz;
 		break;
 	}
 }
@@ -440,18 +445,18 @@ double PROBLEM_3D::U(double nx, double y, double z)
 	int i;
 	//находим элемент
 	for(i = 0; i < ELEM::count && !flag; i++) {
-		int v1  = elems[i].mas[0];
-		int v2  = elems[i].mas[1];
-		int v3  = elems[i].mas[2];
-		int v5  = elems[i].mas[4];
-		if(nx >= nodes[v1-1].mas[0] && nx <= nodes[v2-1].mas[0] &&
-			y >= nodes[v1-1].mas[1] && y <= nodes[v3-1].mas[1] &&
-			z >= nodes[v1-1].mas[2] && z <= nodes[v5-1].mas[2])
+		int v1  = elems[i].value[0];
+		int v2  = elems[i].value[1];
+		int v3  = elems[i].value[2];
+		int v5  = elems[i].value[4];
+		if(nx >= nodes[v1-1].value[0] && nx <= nodes[v2-1].value[0] &&
+			y >= nodes[v1-1].value[1] && y <= nodes[v3-1].value[1] &&
+			z >= nodes[v1-1].value[2] && z <= nodes[v5-1].value[2])
 			flag = true;
 	}
 	int lc = i;
 	double sum = 0;
 	for(i = 0; i< EL_SIZE; i++)
-		sum += x[elems[lc-1].mas[i]-1] * get_psi(lc-1,i,nx,y,z);
+		sum += x[elems[lc-1].value[i]-1] * get_psi(lc-1,i,nx,y,z);
 	return sum;
 }

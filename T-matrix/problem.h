@@ -14,7 +14,7 @@ const double gamma = 1;
 struct ELEM
 {
 	static int count;
-	int mas[EL_SIZE];
+	int value[EL_SIZE];
 	double lambda;
 	double gamma;
 };
@@ -22,7 +22,7 @@ struct ELEM
 //Координаты узлов
 struct NODE
 {
-	double mas[3];
+	double value[3];
 	static int count;
 };
 
@@ -48,8 +48,6 @@ private:
 	SymmetricSolver solver;
 
 	vector<double> f;
-	
-	vector<double> vect_v;
 	vector<double> x;
 
 public:
@@ -58,7 +56,7 @@ public:
 	const char *FILE_NODE = "cross.txt";
 	const char *FILE_OUT;
 	const char *FILE_CRAEV_1 = "boundary.txt";
-	const char *FILE_CRAEV_2;
+	const char *FILE_CRAEV_2 = "";
 	const char *FILE_CRAEV_3;
 	double POR = 1e30;
 
@@ -108,14 +106,14 @@ public:
 		//Преобразуем считанные данные в массивы
 		double a[3];
 		for (int i = 0, k = 0; i < 3 * nodes_size; i += 3, k++) {
-			nodes[k].mas[0] = tmp1[i];
-			nodes[k].mas[1] = tmp1[i + 1];
-			nodes[k].mas[2] = tmp1[i + 2];
+			nodes[k].value[0] = tmp1[i];
+			nodes[k].value[1] = tmp1[i + 1];
+			nodes[k].value[2] = tmp1[i + 2];
 		}
 
 		for (int i = 0, k = 0; k < el_size; k++, i = i + 14) {
 			for (int j = 0; j < 8; j++) {
-				elems[k].mas[j] = tmp2[i + j];
+				elems[k].value[j] = tmp2[i + j];
 				elems[k].lambda = lambda;
 				elems[k].gamma = gamma;
 			}
