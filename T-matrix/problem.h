@@ -39,7 +39,6 @@ public:
 };
 
 
-
 class PROBLEM_3D: public MATRIX
 {
 private:
@@ -52,25 +51,14 @@ private:
 
 public:
 
-	const char *FILE_ELEM_NUMBER = "local.txt";
-	const char *FILE_NODE = "cross.txt";
-	const char *FILE_OUT;
-	const char *FILE_CRAEV_1 = "boundary.txt";
-	const char *FILE_CRAEV_2 = "";
-	const char *FILE_CRAEV_3;
+	
 	double POR = 1e30;
 
 	PROBLEM_3D();
 	~PROBLEM_3D();
-	void read_ELEM();
-	void read_NODE();
 	void buildPortrait();
 	void fillTheMatrix();
 	void add(int,int,double);
-	
-	void kraev_1();
-	void kraev_2();
-	void kraev_3();
 	void print_result();
 
 	bool readFromFiles(const char* inf,  const char *xyz, const char *nver) {
@@ -126,10 +114,7 @@ public:
 
 		return true;
 	};
-
-	double U(double nx, double y, double z);
-	double get_psi(int num_fe, int num_basis, double x,double y, double z);
-
+	
 	void solveMatrix() {
 		for (int i = 0; i < ig.size(); i++)
 			ig[i]--;
