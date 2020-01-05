@@ -21,6 +21,10 @@ const double GAMMA1 = 1;
 const double GAMMA2 = 1;
 
 
+// Number of interval splits in Gauss Integration
+const uint32_t GAUSS_FRAGMENTATION = 30;
+const int GAUSS_DEGREE = 5;
+
 // Локальные элементы
 struct ELEM
 {
@@ -71,7 +75,7 @@ private:
 	vector<uint32_t> firstBoundary;
 
 	void setSlaeExactValue(uint32_t, double, MATRIX&);
-
+	double Gauss(double (*f)(double), double begin, double end);
 	vector<double> solveM(vector<double>&);
 public:
 

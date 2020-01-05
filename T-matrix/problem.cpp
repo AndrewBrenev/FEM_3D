@@ -304,14 +304,14 @@ bool PROBLEM_3D::readFromFiles(const char* inf, const char* xyz, const char* nve
 	fscanf(file, " ISLAU=       0 INDKU1=       0 INDFPO=       0\nKUZLOV=%8d   KPAR=%8d    KT1=       0   KTR2=       0   KTR3=       0\nKISRS1=       0 KISRS2=       0 KISRS3=       0   KBRS=       0\n   KT7=       0   KT10=       0   KTR4=       0  KTSIM=       0\n   KT6=       0\n", &nodes_size, &el_size);
 	fclose(file);
 
-
-	NODE::count = nodes_size;
-	ELEM::count = el_size;
-	n = NODE::count;
+	slae.n = nodes_size;
 
 
-	nodes = new NODE[nodes_size];
-	elems = new ELEM[ELEM::count];
+	nodes.resize(nodes_size);
+	nodes.reserve(nodes_size);
+
+	elems.reserve(el_size);
+	elems.resize(el_size);
 
 	int* tmp = new int[el_size];
 	size_t t;
@@ -343,10 +343,10 @@ bool PROBLEM_3D::readFromFiles(const char* inf, const char* xyz, const char* nve
 		}
 	}
 
-	di.resize(n);
-	f.resize(n);
-	x.resize(n);
-	ig.resize(n + 1);
+	slae.di.resize(slae.n);
+	f.resize(slae.n);
+	x.resize(slae.n);
+	slae.ig.resize(slae.n + 1);
 
 	return true;
 };
