@@ -1,29 +1,23 @@
 #include "problem.h"
+#include "T-Matrix.h"
+
 
 int main()
 {
+	bool t_mesh = false;
 
-	REGION outter, object;
+	PROBLEM_3D problem(t_mesh);
+	
+	problem.readGridFromFiles(mesh_inftry_path.c_str(), mesh_xyz_path.c_str(), mesh_nver_path.c_str());
 
-	outter.X0 = 0; outter.Xn = 20; outter.Xh = 1;
-	outter.Y0 = 0; outter.Yn = 20; outter.Yh = 1;
-	outter.Z0 = 0; outter.Zn = 20; outter.Zh = 1;
-
-	object.X0 = 0; object.Xn = 1; object.Xh = 1;
-	object.Y0 = 0; object.Yn = 1; object.Yh = 1;
-	object.Z0 = 0; object.Zn = 1; object.Zh = 1;
-
-	PROBLEM_3D problem(outter, object);
-
-//	problem.buildGrid();
-
-	problem.readFromFiles("../Test_Mesh/inftry.dat", "../Test_Mesh/xyz.dat", "../Test_Mesh/nver.dat");
-
-
-	problem.buildPortrait();
-	problem.fillTheMatrix();
+	//problem.buildPortrait();
+	problem.buildSetBasedPortrait();
+	problem.fillTheMatrix(); 
+	problem.calculateRightPart();
+	problem.applyFirstEdge();
 	problem.solveMatrix();
-	problem.print_result();
+	problem.showResault();
+	problem.printResult("resault.txt");
 
-	return 0;
+ 	return 0;
 }

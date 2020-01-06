@@ -123,13 +123,18 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Grid.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="problem.cpp" />
     <ClCompile Include="Solver.cpp" />
+    <ClCompile Include="T-Matrix.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="grid.h" />
     <ClInclude Include="problem.h" />
     <ClInclude Include="Solver.h" />
+    <ClInclude Include="stdafx.h" />
+    <ClInclude Include="T-Matrix.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="resault.txt" />

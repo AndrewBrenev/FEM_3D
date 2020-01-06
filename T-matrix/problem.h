@@ -1,107 +1,81 @@
-#ifndef PROBLEM_H_
+#pragma once
 
-#define PROBLEM_H_
-
-#define EL_SIZE 8
-
-//----------------------------
-#include <stdlib.h>
-#include <stdio.h>
-#include <math.h>
-#include <vector>
-#include <stdexcept>
-
+#include "stdafx.h"
 #include "Solver.h"
+#include "Grid.h"
+#include "T-Matrix.h"
 
-using namespace std;
+const string t_matrix_config = "./t-matix/params.txt";
+const string t_matrix_ig = "./t-matix/ig.txt";
+const string t_matrix_jg = "./t-matix/jg.txt";
+const string t_matrix_gg = "./t-matix/gg.txt";
 
-const double LAMBDA = 1;
+const string mesh_inftry_path = "../input/Cubes/inftry.dat";
+const string mesh_xyz_path = "../input/Cubes/xyz.dat";
+const string mesh_nver_path = "../input/Cubes/nver.dat";
 
-const double GAMMA1 = 1;
-const double GAMMA2 = 1;
+const string boundary_path = "../input/Cubes/boundary.txt";
 
-
-// Number of interval splits in Gauss Integration
-const uint32_t GAUSS_FRAGMENTATION = 30;
-const int GAUSS_DEGREE = 5;
-
-// Локальные элементы
-struct ELEM
-{
-	int id;
-	int value[EL_SIZE];
-	double lambda;
-	double gamma;
-};
-
-//Координаты узлов
-struct NODE
-{
-	// 0 - x ,1 - y , 2 - z
-	double value[3];
-	int id;
-};
-
-struct MATRIX
-{
-	int n;
-	vector<double> di;
-	vector<double> gg;
-	vector<uint32_t> ig;
-	vector<uint32_t> jg;
-};
-
-struct REGION {
-	double X0, Xn, Xh;
-	double Y0, Yn, Yh;
-	double Z0, Zn, Zh;
-};
 
 class PROBLEM_3D
 {
 private:
 
+	//in CSR format
 	MATRIX slae, M;
-	vector<ELEM> elems;
-	vector<NODE> nodes;
+
+	// in CSC format
+	T_MATRIX t_matix;
+	Grid grid;
+
+	const bool inconsistentProblem;
 
 	SymmetricSolver solver;
-
-	const REGION outter, inner;
-
+	
 	vector<double> f;
 	vector<double> x;
-
-	vector<uint32_t> firstBoundary;
-
+	
 	void setSlaeExactValue(uint32_t, double, MATRIX&);
 	double Gauss(double (*f)(double), double begin, double end);
 	vector<double> solveM(vector<double>&);
+
+	double jacobianMatrix[3][3];
+	double inverseMatrix[3][3];
+
+	void calculateInverseMatrix();
+	double getDeterminant();
+	void calculateJacobianMatrix(double ksi, double eta, double teta, int numElement);
+	void calculateTemplateJacobianMatrix(int index, int numElement);
+	void destruct();
+	void setMatrixSize(const size_t size);
+	void processTerminalNode(int, int, double);
+	void processTerminalNode(int, double);
 public:
 
-	PROBLEM_3D();
+	PROBLEM_3D(bool _inconsistentProblem) :inconsistentProblem(_inconsistentProblem) {
 
-	PROBLEM_3D(const REGION& _outter, const REGION& _inner) :inner(_inner), outter(_outter)
-	{	};
+		if (inconsistentProblem)
+			t_matix.readFromFiles(t_matrix_config.c_str(), t_matrix_ig.c_str(), t_matrix_jg.c_str(), t_matrix_gg.c_str());
+
+	}; 
+	PROBLEM_3D(bool _inconsistentProblem,T_MATRIX _t_matrix) :inconsistentProblem(_inconsistentProblem),t_matix(_t_matrix) {};
 
 	~PROBLEM_3D();
 
-
-	bool readFromFiles(const char* inf, const char* xyz, const char* nver);
-
 	void buildPortrait();
-
+	void buildSetBasedPortrait();
 	void fillTheMatrix();
 
-	void add(int, int, double);
-	void addM(int, int, double);
+	void calculateRightPart();
 
-	void print_result();
+	void readGridFromFiles(const char* inf, const char* xyz, const char* nver);
 
-	void buildGrid();
+	vector<uint32_t>  readFirstBoundaryFromFile(const char*);
+	void applyFirstEdge();
 
+	void printResult(const char* fname);
+
+	void showResault();
 	void solveMatrix();
 
 };
-
-#endif
