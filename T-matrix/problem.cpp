@@ -1,62 +1,8 @@
 #include "problem.h"
 
-int G1[2][2] = { {1,-1},{-1,1} };
-double M1[2][2] = { { 1. / 3., 1. / 6. }, { 1. / 6., 1. / 3. } };
-
-//u с хвостиком
-int u(int i) { return i / 4; };
-int my(int i) { return i % 2; };
-int v(int i) { return (i / 2) % 2; };
-
 // -div( lambda grad(u)) + gamma*u  = right
 
-double right(double* x)
-{
-	return 4 * (x[0] * x[0] + x[1] * x[1] + x[2] * x[2]) + 18;
-	//return 5;
-}
-double u_real(double* x)
-{
-	return x[0] * x[0] + x[1] * x[1] + x[2] * x[2];
-	//return 5;
-}
 
-
-
-void mul_c_vector(vector <double>& _vector, double* h) {
-	vector <double> result(EL_SIZE);
-
-	for (int i = 0; i < EL_SIZE; ++i)
-		for (int j = 0; j < EL_SIZE; ++j)
-			result[i] += h[0] * M1[my(i)][my(j)] * h[1] * M1[v(i)][v(j)] * h[2] * M1[u(i)][u(j)] * _vector[j];
-
-	_vector = result;
-}
-
-double PROBLEM_3D::Gauss(double (*f)(double), double begin, double end)
-{
-	double iLength = (end - begin) / GAUSS_FRAGMENTATION;
-	double sum = 0.0;
-	for (int i = 0; i < GAUSS_FRAGMENTATION; ++i)
-	{
-		double a = begin + i * iLength;
-		double b = begin + (i + 1) * iLength;
-
-		const double Xi[GAUSS_DEGREE] = { -0.9061798,-0.5384693,0,0.5384693,0.9061798 };
-		const double Ci[GAUSS_DEGREE] = { 0.4786287,0.2369269,0.5688888 ,0.2369269,0.4786287 };
-
-		double ra = (b - a) / 2;
-		double su = (a + b) / 2;
-		double Q, S = 0.0;
-		for (int i = 0; i < GAUSS_DEGREE; i++)
-		{
-			Q = su + ra * Xi[i];
-			S += Ci[i] * f(Q);
-		}
-		sum += ra * S;
-	}
-	return sum;
-}
 
 void PROBLEM_3D::setSlaeExactValue(uint32_t i, double value, MATRIX& slae)
 {
@@ -90,39 +36,7 @@ void PROBLEM_3D::setSlaeExactValue(uint32_t i, double value, MATRIX& slae)
 
 }
 
-vector<double> PROBLEM_3D::solveM(vector<double>& f) {
 
-	vector<double> x_res(f.size());
-
-	M = slae;
-
-	// 0 - dx, 1 - dy, 3 - dz 
-	double h[3];
-
-
-	for (int k = 0; k < grid.elems.size(); k++)
-	{
-		//Вычисление шага
-		//h----------------------------------------------------------
-		h[0] = abs(grid.nodes[grid.elems[k].value[0]].value[0] - grid.nodes[grid.elems[k].value[1]].value[0]);
-		h[1] = abs(grid.nodes[grid.elems[k].value[0]].value[1] - grid.nodes[grid.elems[k].value[2]].value[1]);
-		h[2] = abs(grid.nodes[grid.elems[k].value[0]].value[2] - grid.nodes[grid.elems[k].value[4]].value[2]);
-
-		//------------------------------------------------------------
-		//формирование элементов матрицы масс
-		for (int i = 0; i < EL_SIZE; i++)
-			for (int j = 0; j <= i; j++)
-			{
-				double Mij = grid.elems[k].gamma * h[0] * M1[my(i)][my(j)] * h[1] * M1[v(i)][v(j)] * h[2] * M1[u(i)][u(j)];
-
-				M.addValue(grid.elems[k].value[j], grid.elems[k].value[i], Mij);
-			}
-	}
-
-	solver.Solve(M.gg, M.di, M.ig, M.jg, f, x_res);
-
-	return x_res;
-}
 //------------------------------------------------------
 void PROBLEM_3D::buildPortrait()
 {
@@ -314,38 +228,38 @@ void PROBLEM_3D::processTerminalNode(int i, int j, double value)
 	}
 }
 //------------------------------------------------------
-void PROBLEM_3D::fillTheMatrix()
-{
-	// 0 - dx, 1 - dy, 3 - dz 
-	double h[3];
+void PROBLEM_3D::addLocalMatrix(int local_id) {
 
-	for (int k = 0; k < grid.elems.size(); k++) {
-		//Вычисление шага
-		//h----------------------------------------------------------
-		h[0] = abs(grid.nodes[grid.elems[k].value[0]].value[0] - grid.nodes[grid.elems[k].value[1]].value[0]);
-		h[1] = abs(grid.nodes[grid.elems[k].value[0]].value[1] - grid.nodes[grid.elems[k].value[4]].value[1]);
-		h[2] = abs(grid.nodes[grid.elems[k].value[0]].value[2] - grid.nodes[grid.elems[k].value[2]].value[2]);
+	for (int i = 0; i < EL_SIZE; ++i) {
 
+		for (int j = 0; j <= i; ++j) {
+			double value = mesh.A[i][j];
+			if (inconsistentProblem)
+				processTerminalNode(grid.elems[k].value[j], grid.elems[k].value[i], value);
+			else
+				slae.addValue(grid.elems[k].value[j], grid.elems[k].value[i], value);
 
-		double gX = 1. / h[0], gY = 1. / h[1], gZ = 1. / h[2];
+		}
 
-		for (int i = 0; i < EL_SIZE; ++i)
-			for (int j = 0; j <= i; ++j) {
-				double Gij =
-					gX * G1[my(i)][my(j)] * h[1] * M1[v(i)][v(j)] * h[2] * M1[u(i)][u(j)] +
-					h[0] * M1[my(i)][my(j)] * gY * G1[v(i)][v(j)] * h[2] * M1[u(i)][u(j)] +
-					h[0] * M1[my(i)][my(j)] * h[1] * M1[v(i)][v(j)] * gZ * G1[u(i)][u(j)];
+		if (inconsistentProblem)
+			//Add elem to matrix
+			processTerminalNode(grid.elems[k].value[i], elementRightPart[i]);
+		else
+			// add right part
+			f[grid.elems[k].value[i]] += elementRightPart[i];
 
-				double Mij = h[0] * M1[my(i)][my(j)] * h[1] * M1[v(i)][v(j)] * h[2] * M1[u(i)][u(j)];
-				double value = grid.elems[k].lambda * Gij + grid.elems[k].gamma * Mij;
-
-				if (inconsistentProblem)
-					processTerminalNode(grid.elems[k].value[j], grid.elems[k].value[i], value);
-				else
-					slae.addValue(grid.elems[k].value[j], grid.elems[k].value[i], value);
-			}
 	}
 }
+
+void PROBLEM_3D::buildMatrixAndRightPart() {
+	for (int i = 0; i < grid.elems.size(); i++)
+	{
+		mesh.setLocalMatrixAndRightPart();
+		mesh.calculateLocal(i);
+		addLocalMatrix(i);
+	}
+}
+
 
 void PROBLEM_3D::calculateRightPart() {
 	double h[3];
@@ -353,14 +267,9 @@ void PROBLEM_3D::calculateRightPart() {
 
 	for (int k = 0; k < grid.elems.size(); k++) {
 
-		h[0] = abs(grid.nodes[grid.elems[k].value[0]].value[0] - grid.nodes[grid.elems[k].value[1]].value[0]);
-		h[1] = abs(grid.nodes[grid.elems[k].value[0]].value[1] - grid.nodes[grid.elems[k].value[4]].value[1]);
-		h[2] = abs(grid.nodes[grid.elems[k].value[0]].value[2] - grid.nodes[grid.elems[k].value[2]].value[2]);
-
 		for (int i = 0; i < EL_SIZE; i++)
-			elementRightPart[i] = right(grid.nodes[grid.elems[k].value[i]].value);
-
-		mul_c_vector(elementRightPart, h);
+			// TODO : write matrix procedure
+			elementRightPart[i] = 0;
 
 		for (int i = 0; i < EL_SIZE; i++)
 			if (inconsistentProblem)
@@ -391,7 +300,7 @@ void PROBLEM_3D::applyFirstEdge()
 {
 	grid.firstBoundary = readFirstBoundaryFromFile(boundary_path.c_str());
 	for (auto it = grid.firstBoundary.begin(); it < grid.firstBoundary.end(); it++)
-		setSlaeExactValue(*it, u_real(grid.nodes[*it].value), slae);
+		setSlaeExactValue(*it, u_real(grid.nodes[*it]), slae);
 }
 PROBLEM_3D::~PROBLEM_3D()
 {
@@ -403,7 +312,6 @@ PROBLEM_3D::~PROBLEM_3D()
 
 void PROBLEM_3D::readGridFromFiles(const char* inf, const char* xyz, const char* nver)
 {
-
 	if (inconsistentProblem)
 		grid.buildTestInconsistentGrid();
 	else
@@ -431,8 +339,8 @@ void PROBLEM_3D::showResault()
 	double real_solution;
 	for (int i = 0; i < slae.n; i++)
 	{
-		real_solution = u_real(grid.nodes[i].value);
-		printf("%.3lf %.3lf %.3lf %.15lf %.15lf %.15lf\n", grid.nodes[i].value[0], grid.nodes[i].value[1], grid.nodes[i].value[2], real_solution, x[i], abs(real_solution - x[i]));
+		real_solution = u_real(grid.nodes[i]);
+		printf("%.3lf %.3lf %.3lf %.15lf %.15lf %.15lf\n", grid.nodes[i].x, grid.nodes[i].y, grid.nodes[i].z, real_solution, x[i], abs(real_solution - x[i]));
 	}
 }
 //--------------------------------------
@@ -441,118 +349,9 @@ void PROBLEM_3D::printResult(const char* fname)
 	FILE* f = fopen(fname, "w");
 	for (int i = 0; i < slae.n; i++)
 	{
-		double real_solution = u_real(grid.nodes[i].value);
+		double real_solution = u_real(grid.nodes[i]);
 
-		fprintf(f, "%.3lf %.3lf %.3lf %.15lf %.15lf %.15lf\n", grid.nodes[i].value[0], grid.nodes[i].value[1], grid.nodes[i].value[2], real_solution, x[i], abs(real_solution - x[i]));
+		fprintf(f, "%.3lf %.3lf %.3lf %.15lf %.15lf %.15lf\n", grid.nodes[i].x, grid.nodes[i].y, grid.nodes[i].z, real_solution, x[i], abs(real_solution - x[i]));
 	}
 	fclose(f);
 }
-
-
-
-// Jacobian && local matrix
-
-double PROBLEM_3D::getDeterminant()
-{
-	double result = 0;
-	result = jacobianMatrix[0][0] * jacobianMatrix[1][1] * jacobianMatrix[2][2] -
-		jacobianMatrix[0][0] * jacobianMatrix[1][2] * jacobianMatrix[2][1] -
-		jacobianMatrix[0][1] * jacobianMatrix[1][0] * jacobianMatrix[2][2] +
-		jacobianMatrix[0][1] * jacobianMatrix[2][0] * jacobianMatrix[1][2] +
-		jacobianMatrix[1][0] * jacobianMatrix[0][2] * jacobianMatrix[2][1] -
-		jacobianMatrix[0][2] * jacobianMatrix[1][1] * jacobianMatrix[2][0];
-
-	return result;
-}
-
-void PROBLEM_3D::calculateInverseMatrix()
-{
-	double determinant = getDeterminant();
-
-	inverseMatrix[0][0] = (jacobianMatrix[1][1] * jacobianMatrix[2][2] - jacobianMatrix[1][2] * jacobianMatrix[2][1]) / fabs(determinant);
-	inverseMatrix[0][1] = (jacobianMatrix[0][2] * jacobianMatrix[2][1] - jacobianMatrix[0][1] * jacobianMatrix[2][2]) / fabs(determinant);
-	inverseMatrix[0][2] = (jacobianMatrix[0][1] * jacobianMatrix[1][2] - jacobianMatrix[0][2] * jacobianMatrix[1][1]) / fabs(determinant);
-	inverseMatrix[1][0] = (jacobianMatrix[2][0] * jacobianMatrix[1][2] - jacobianMatrix[1][0] * jacobianMatrix[2][2]) / fabs(determinant);
-	inverseMatrix[1][1] = (jacobianMatrix[0][0] * jacobianMatrix[2][2] - jacobianMatrix[0][2] * jacobianMatrix[2][0]) / fabs(determinant);
-	inverseMatrix[1][2] = (jacobianMatrix[1][0] * jacobianMatrix[0][2] - jacobianMatrix[0][0] * jacobianMatrix[1][2]) / fabs(determinant);
-	inverseMatrix[2][0] = (jacobianMatrix[1][0] * jacobianMatrix[2][1] - jacobianMatrix[1][1] * jacobianMatrix[2][0]) / fabs(determinant);
-	inverseMatrix[2][1] = (jacobianMatrix[0][1] * jacobianMatrix[2][0] - jacobianMatrix[0][0] * jacobianMatrix[2][1]) / fabs(determinant);
-	inverseMatrix[2][2] = (jacobianMatrix[0][0] * jacobianMatrix[1][1] - jacobianMatrix[0][1] * jacobianMatrix[1][0]) / fabs(determinant);
-}
-/*
-void PROBLEM_3D::calculateJacobianMatrix(double ksi, double eta, double teta, int numElement)
-{
-	for (int i = 0; i < 3; i++)
-	{
-		for (int j = 0; j < 3; j++)
-		{
-			jacobianMatrix[i][j] = 0;
-		}
-	}
-
-	auto elem = nver[numElement];
-
-	for (int i = 0; i < 3; i++)
-	{
-		for (int j = 0; j < EL_SIZE; j++)
-		{
-			jacobianMatrix[i][0] += XYZ[elem.grid.nodes[j]].x * gradPhi[i][j](ksi, eta, teta);
-			jacobianMatrix[i][1] += XYZ[elem.grid.nodes[j]].y * gradPhi[i][j](ksi, eta, teta);
-			jacobianMatrix[i][2] += XYZ[elem.grid.nodes[j]].z * gradPhi[i][j](ksi, eta, teta);
-		}
-	}
-}
-
-void PROBLEM_3D::calculateTemplateJacobianMatrix(int index, int numElement)
-{
-	for (int i = 0; i < 3; i++)
-	{
-		for (int j = 0; j < 3; j++)
-		{
-			jacobianMatrix[i][j] = 0;
-		}
-	}
-
-	auto elem = nver[numElement];
-
-	for (int i = 0; i < 3; i++)
-	{
-		for (int j = 0; j < EL_SIZE; j++)
-		{
-			jacobianMatrix[i][0] += XYZ[elem.grid.nodes[j]].x * gradPhiRes[index][i][j];
-			jacobianMatrix[i][1] += XYZ[elem.grid.nodes[j]].y * gradPhiRes[index][i][j];
-			jacobianMatrix[i][2] += XYZ[elem.grid.nodes[j]].z * gradPhiRes[index][i][j];
-		}
-	}
-}
-
-double GetIntegrandRightPart(int index, int i, int numElement)
-{
-	double result = 0;
-	double part[3];
-	vector<double> HcLocal(3, 0);
-
-	for (int w = 0; w < 8; w++)
-	{
-		for (int j = 0; j < 3; j++)
-		{
-			HcLocal[j] += phiRes[index][w] * Hc_Ofgrid.nodes[nver[numElement].grid.nodes[w]][j];
-		}
-	}
-
-	for (int k = 0; k < 3; k++)
-	{
-		part[k] = 0;
-		for (int l = 0; l < 3; l++)
-		{
-			part[k] += inverseMatrix[k][l] * gradPhiRes[index][l][i];
-		}
-
-		result += part[k] * HcLocal[k];
-	}
-
-	result *= fabsl(determinant);
-	return result;
-}
-
-*/

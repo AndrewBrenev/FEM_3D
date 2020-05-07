@@ -33,9 +33,9 @@ bool Grid::readGridFromFiles(const char* inf, const char* xyz, const char* nver)
 	//ѕреобразуем считанные данные в массивы
 	double a[3];
 	for (int i = 0, k = 0; i < 3 * nodes_size; i += 3, k++) {
-		nodes[k].value[0] = tmp1[i];
-		nodes[k].value[1] = tmp1[i + 1];
-		nodes[k].value[2] = tmp1[i + 2];
+		nodes[k].x = tmp1[i];
+		nodes[k].y = tmp1[i + 1];
+		nodes[k].z = tmp1[i + 2];
 	}
 
 	for (int i = 0, k = 0; k < el_size; k++, i = i + 14) {
