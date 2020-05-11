@@ -61,7 +61,8 @@ public:
 	void readGridFromFiles(const char* inf, const char* xyz, const char* nver);
 
 	vector<uint32_t>  readFirstBoundaryFromFile(const char*);
-	void applyFirstEdge();
+	void applyFirstBoundaryConditions();
+	void applySecondBoundaryConditions();
 
 	void printResult(const char* fname);
 

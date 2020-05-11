@@ -305,6 +305,9 @@ void HexagonElements::setLocalMatrixAndRightPart()
 	}
 }
 
+double HexagonElements::getMatrixElement(int i, int j) { return A[i][j]; }
+double HexagonElements::getRightPartRow(int i) { return b[i]; }
+
 void HexagonElements::calculateLocal(int numElement) {
 	double lam = 1;
 	for (int index = 0; index < 64; index++)
@@ -314,7 +317,7 @@ void HexagonElements::calculateLocal(int numElement) {
 		determinant = getDeterminant();
 		for (int i = 0; i < EL_SIZE; i++)
 		{
-			b[i] += tauProduct[index] * getIntegrandRightPart(index, i, numElement) * lam;
+			 // b[i] += tauProduct[index] * getIntegrandRightPart(index, i, numElement) * lam;
 			for (int j = i; j < EL_SIZE; j++)
 			{
 				double sum = tauProduct[index] * getIntegrand(index, i, j, numElement) * lam;

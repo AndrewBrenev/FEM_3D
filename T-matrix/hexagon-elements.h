@@ -44,7 +44,8 @@ private:
 	vector<double> getHcUsingGauss4(NODE* fArgs, double* Jtok, int hn, NODE X);
 
 public:
-	HexagonElements(const Grid& _grid) :grid(_grid) {
+	HexagonElements(const Grid& _grid) :grid(_grid) 
+	{
 		t[0] = -0.8611363115940525752;
 		t[1] = 0.3399810435848562648;
 		t[2] = -0.3399810435848562648;
@@ -53,8 +54,12 @@ public:
 		tau[1] = 0.6521451548625461426;
 		tau[2] = 0.6521451548625461426;
 		tau[3] = 0.3478548451374538573;
+
+		calculateGradPhiAndPhiAtGaussPoints();
 	};
 
+	double getMatrixElement(int i, int j);
+	double getRightPartRow(int i);
 	void ñalculateVolumes();
 	void calculateHcFromConductors();
 	void calculateLocal(int elem_id);

@@ -17,12 +17,7 @@ using namespace std;
 const double LAMBDA = 3;
 const double GAMMA = 4;
 
-inline double right(NODE x) {
-	return 4 * (x.x * x.x + x.y * x.y + x.z * x.z) + 18;
-}
-inline double u_real(NODE x) {
-	return x.x * x.x + x.y * x.y + x.z * x.z;
-}
+
 
 //u с хвостиком
 inline int u(int i) { return i / 4; };
@@ -43,7 +38,6 @@ struct NODE
 {
 	int id;
 	double x, y, z;
-	NODE() {}
 	NODE() {
 		x = 0;
 		y = 0;
@@ -93,6 +87,13 @@ struct NODE
 		return sqrtl(x * x + y * y + z * z);
 	}
 };
+
+inline double right(NODE x) {
+	return 4 * (x.x * x.x + x.y * x.y + x.z * x.z) + 18;
+}
+inline double u_real(NODE x) {
+	return x.x * x.x + x.y * x.y + x.z * x.z;
+}
 
 class MATRIX
 {

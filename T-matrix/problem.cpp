@@ -233,20 +233,23 @@ void PROBLEM_3D::addLocalMatrix(int local_id) {
 	for (int i = 0; i < EL_SIZE; ++i) {
 
 		for (int j = 0; j <= i; ++j) {
-			double value = mesh.A[i][j];
+			double value = mesh.getMatrixElement(i,j);
 			if (inconsistentProblem)
-				processTerminalNode(grid.elems[k].value[j], grid.elems[k].value[i], value);
+				processTerminalNode(grid.elems[local_id].value[j], grid.elems[local_id].value[i], value);
 			else
-				slae.addValue(grid.elems[k].value[j], grid.elems[k].value[i], value);
+				slae.addValue(grid.elems[local_id].value[j], grid.elems[local_id].value[i], value);
 
 		}
 
+		/*
+		double r_value  = mesh.getRightPartRow(i)
 		if (inconsistentProblem)
 			//Add elem to matrix
-			processTerminalNode(grid.elems[k].value[i], elementRightPart[i]);
+			processTerminalNode(grid.elems[k].value[i], r_value);
 		else
 			// add right part
-			f[grid.elems[k].value[i]] += elementRightPart[i];
+			f[grid.elems[k].value[i]] += r_value;
+			*/
 
 	}
 }
@@ -261,23 +264,6 @@ void PROBLEM_3D::buildMatrixAndRightPart() {
 }
 
 
-void PROBLEM_3D::calculateRightPart() {
-	double h[3];
-	vector<double> elementRightPart(EL_SIZE);
-
-	for (int k = 0; k < grid.elems.size(); k++) {
-
-		for (int i = 0; i < EL_SIZE; i++)
-			// TODO : write matrix procedure
-			elementRightPart[i] = 0;
-
-		for (int i = 0; i < EL_SIZE; i++)
-			if (inconsistentProblem)
-				processTerminalNode(grid.elems[k].value[i], elementRightPart[i]);
-			else
-				f[grid.elems[k].value[i]] += elementRightPart[i];
-	}
-}
 
 vector<uint32_t> PROBLEM_3D::readFirstBoundaryFromFile(const char* input) {
 
@@ -296,12 +282,15 @@ vector<uint32_t> PROBLEM_3D::readFirstBoundaryFromFile(const char* input) {
 	return nodes;
 };
 
-void PROBLEM_3D::applyFirstEdge() 
+void PROBLEM_3D::applyFirstBoundaryConditions()
 {
 	grid.firstBoundary = readFirstBoundaryFromFile(boundary_path.c_str());
 	for (auto it = grid.firstBoundary.begin(); it < grid.firstBoundary.end(); it++)
 		setSlaeExactValue(*it, u_real(grid.nodes[*it]), slae);
 }
+
+void PROBLEM_3D::applySecondBoundaryConditions(){}
+
 PROBLEM_3D::~PROBLEM_3D()
 {
 	grid.elems.clear();

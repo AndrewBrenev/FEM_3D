@@ -11,9 +11,9 @@ int main()
 
 	//problem.buildPortrait();
 	problem.buildSetBasedPortrait();
-	problem.fillTheMatrix(); 
-	problem.calculateRightPart();
-	problem.applyFirstEdge();
+	problem.buildMatrixAndRightPart();
+	problem.applyFirstBoundaryConditions();
+	problem.applySecondBoundaryConditions();
 	problem.solveMatrix();
 	problem.showResault();
 	problem.printResult("resault.txt");

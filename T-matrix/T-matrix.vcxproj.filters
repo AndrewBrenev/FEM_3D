@@ -30,9 +30,6 @@
     <ClCompile Include="T-Matrix.cpp">
       <Filter>Resource Files</Filter>
     </ClCompile>
-    <ClCompile Include="builder.cpp">
-      <Filter>Resource Files</Filter>
-    </ClCompile>
     <ClCompile Include="hexagon-elements.cpp">
       <Filter>Resource Files</Filter>
     </ClCompile>
@@ -51,12 +48,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="stdafx.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="builder.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Structures.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="hexagon-elements.h">
