@@ -2,7 +2,8 @@
 
 
 int main()
-{
+  {
+
 	bool t_mesh = false;
 
 	PROBLEM_3D problem(t_mesh);
@@ -10,10 +11,10 @@ int main()
 	problem.readGridFromFiles(mesh_inftry_path.c_str(), mesh_xyz_path.c_str(), mesh_nver_path.c_str());
 
 	//problem.buildPortrait();
-	problem.buildSetBasedPortrait();
+   	problem.buildSetBasedPortrait();
 	problem.buildMatrixAndRightPart();
+	//problem.applySecondBoundaryConditions();
 	problem.applyFirstBoundaryConditions();
-	problem.applySecondBoundaryConditions();
 	problem.solveMatrix();
 	problem.showResault();
 	problem.printResult("resault.txt");

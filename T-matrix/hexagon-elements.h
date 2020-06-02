@@ -21,16 +21,10 @@ private:
 	double jacobianMatrix[JACOBIAN_SIZE][JACOBIAN_SIZE];
 	double inverseMatrix[JACOBIAN_SIZE][JACOBIAN_SIZE];
 
-	vector<vector<double>> Hc_OfNodes;
-	vector<CONDUCTOR> conductors;
-	vector<double> volumesOfElements;
-	vector<double> volumesOfNodes;
 
 	double A[EL_SIZE][EL_SIZE], b[EL_SIZE];
 	double t[GAUSS_DEGREE], tau[GAUSS_DEGREE];
 	
-	double Gauss(double (*f)(double), double begin, double end);
-
 	// Jacobian && local matrix
 	double getDeterminant();
 	double getIntegrand(int index, int i, int j, int numElement);
@@ -40,11 +34,9 @@ private:
 	void calculateInverseMatrix();
 	void calculateGradPhiAndPhiAtGaussPoints();
 
-	vector<vector<double>> getHcFromOneConductor(CONDUCTOR conductor, int hn);
-	vector<double> getHcUsingGauss4(NODE* fArgs, double* Jtok, int hn, NODE X);
 
 public:
-	HexagonElements(const Grid& _grid) :grid(_grid) 
+	HexagonElements(const Grid& _grid) :grid(_grid)
 	{
 		t[0] = -0.8611363115940525752;
 		t[1] = 0.3399810435848562648;
@@ -60,8 +52,6 @@ public:
 
 	double getMatrixElement(int i, int j);
 	double getRightPartRow(int i);
-	void ñalculateVolumes();
-	void calculateHcFromConductors();
 	void calculateLocal(int elem_id);
 	void setLocalMatrixAndRightPart();
 

@@ -17,8 +17,6 @@ using namespace std;
 const double LAMBDA = 3;
 const double GAMMA = 4;
 
-
-
 //u с хвостиком
 inline int u(int i) { return i / 4; };
 inline int my(int i) { return i % 2; };
@@ -88,11 +86,17 @@ struct NODE
 	}
 };
 
-inline double right(NODE x) {
-	return 4 * (x.x * x.x + x.y * x.y + x.z * x.z) + 18;
+struct PLANE {
+	int node_id[4];
+};
+
+inline double f(NODE x) {
+	return 0;
+	//return  x.x + x.y+ x.z ;
 }
 inline double u_real(NODE x) {
-	return x.x * x.x + x.y * x.y + x.z * x.z;
+	 return  130;
+	//return  x.x * x.x +  x.y*x.y +  x.z*x.z;
 }
 
 class MATRIX
@@ -145,11 +149,4 @@ public:
 		}
 		return y;
 	}
-};
-
-struct CONDUCTOR
-{
-	NODE str;
-	NODE end;
-	double Jtok[3];
 };

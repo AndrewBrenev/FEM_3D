@@ -1,4 +1,4 @@
-#pragma once
+ #pragma once
 
 #include "stdafx.h"
 #include "Solver.h"
@@ -6,16 +6,18 @@
 #include "hexagon-elements.h"
 #include "T-Matrix.h"
 
-const string t_matrix_config = "./t-matix/params.txt";
-const string t_matrix_ig = "./t-matix/ig.txt";
-const string t_matrix_jg = "./t-matix/jg.txt";
-const string t_matrix_gg = "./t-matix/gg.txt";
+const string t_matrix_config = "../input/Pipe/t-matrix/params.txt";
+const string t_matrix_ig = "../input/Pipe/t-matrix/ig.txt";
+const string t_matrix_jg = "../input/Pipe/t-matrix/jg.txt";
+const string t_matrix_gg = "../input/Pipe/t-matrix/gg.txt";
 
-const string mesh_inftry_path = "../input/Cubes/inftry.dat";
-const string mesh_xyz_path = "../input/Cubes/xyz.dat";
-const string mesh_nver_path = "../input/Cubes/nver.dat";
+const string mesh_inftry_path = "../input/Pipe/mesh/inftry.dat";
+const string mesh_xyz_path = "../input/Pipe/mesh/xyz.dat";
+const string mesh_nver_path = "../input/Pipe/mesh/nver.dat";
 
-const string boundary_path = "../input/Cubes/boundary.txt";
+const string first_boundary_path = "../input/Pipe/first_boundary.txt";
+const string second_boundary_path = "../input/Pipe/second_boundary.txt";
+
 
 
 class PROBLEM_3D
@@ -42,6 +44,9 @@ private:
 	void setMatrixSize(const size_t size);
 	void processTerminalNode(int, int, double);
 	void processTerminalNode(int, double);
+
+	vector<uint32_t>  readFirstBoundaryFromFile(const char*);
+	vector<PLANE> readSecondBoundaryFromFile(const char* input);
 public:
 
 	PROBLEM_3D(bool _inconsistentProblem) :inconsistentProblem(_inconsistentProblem), mesh(grid){
@@ -60,9 +65,10 @@ public:
 
 	void readGridFromFiles(const char* inf, const char* xyz, const char* nver);
 
-	vector<uint32_t>  readFirstBoundaryFromFile(const char*);
 	void applyFirstBoundaryConditions();
-	void applySecondBoundaryConditions();
+	
+	// TODO
+	//void applySecondBoundaryConditions();
 
 	void printResult(const char* fname);
 

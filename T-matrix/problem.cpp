@@ -3,7 +3,6 @@
 // -div( lambda grad(u)) + gamma*u  = right
 
 
-
 void PROBLEM_3D::setSlaeExactValue(uint32_t i, double value, MATRIX& slae)
 {
 	if (i >= slae.di.size())
@@ -217,14 +216,13 @@ void PROBLEM_3D::processTerminalNode(int i, int j, double value)
 		auto notZeroRows = t_matix.getNotZeroRowsOfColum(i);
 		auto notZeroColums = t_matix.getNotZeroRowsOfColum(j);
 
-		for (int row : notZeroRows) 
-		for(int colum: notZeroColums)
-		{
-			auto tRowValue = t_matix.getElement(row, i);
-			auto tColumValue = t_matix.getElement(colum, j);
-			slae.addValue(row, colum, tColumValue *tRowValue * value);
-		}
-
+		for (int row : notZeroRows)
+			for (int colum : notZeroColums)
+			{
+				auto tRowValue = t_matix.getElement(row, i);
+				auto tColumValue = t_matix.getElement(colum, j);
+				slae.addValue(row, colum, tColumValue * tRowValue * value);
+			}
 	}
 }
 //------------------------------------------------------
@@ -233,7 +231,7 @@ void PROBLEM_3D::addLocalMatrix(int local_id) {
 	for (int i = 0; i < EL_SIZE; ++i) {
 
 		for (int j = 0; j <= i; ++j) {
-			double value = mesh.getMatrixElement(i,j);
+			double value = mesh.getMatrixElement(i, j);
 			if (inconsistentProblem)
 				processTerminalNode(grid.elems[local_id].value[j], grid.elems[local_id].value[i], value);
 			else
@@ -241,20 +239,20 @@ void PROBLEM_3D::addLocalMatrix(int local_id) {
 
 		}
 
-		/*
-		double r_value  = mesh.getRightPartRow(i)
+
+		double r_value = mesh.getRightPartRow(i);
 		if (inconsistentProblem)
 			//Add elem to matrix
-			processTerminalNode(grid.elems[k].value[i], r_value);
+			processTerminalNode(grid.elems[local_id].value[i], r_value);
 		else
 			// add right part
-			f[grid.elems[k].value[i]] += r_value;
-			*/
+			f[grid.elems[local_id].value[i]] += r_value;
 
 	}
 }
 
 void PROBLEM_3D::buildMatrixAndRightPart() {
+	
 	for (int i = 0; i < grid.elems.size(); i++)
 	{
 		mesh.setLocalMatrixAndRightPart();
@@ -284,12 +282,41 @@ vector<uint32_t> PROBLEM_3D::readFirstBoundaryFromFile(const char* input) {
 
 void PROBLEM_3D::applyFirstBoundaryConditions()
 {
-	grid.firstBoundary = readFirstBoundaryFromFile(boundary_path.c_str());
+	grid.firstBoundary = readFirstBoundaryFromFile(first_boundary_path.c_str());
 	for (auto it = grid.firstBoundary.begin(); it < grid.firstBoundary.end(); it++)
 		setSlaeExactValue(*it, u_real(grid.nodes[*it]), slae);
 }
 
-void PROBLEM_3D::applySecondBoundaryConditions(){}
+vector<PLANE> PROBLEM_3D::readSecondBoundaryFromFile(const char* input) {
+
+	// read file config
+	ifstream fin(input, ios::in);
+
+	int planes_count;
+	fin >> planes_count;
+
+	vector<PLANE> planes(planes_count);
+	planes.resize(planes_count);
+
+	for (int i = 0; i < planes_count; ++i)
+		for (int j = 0; j < 4; j++)
+			fin >> planes[i].node_id[j];
+
+	fin.close();
+	return planes;
+};
+
+/* TODO
+void PROBLEM_3D::applySecondBoundaryConditions() {
+	grid.secondBoundary = readSecondBoundaryFromFile(second_boundary_path.c_str());
+
+	int i = 0;
+	for (auto it = grid.secondBoundary.begin(); it < grid.secondBoundary.end(); it++) {
+		//process somehow
+		i++;
+	}
+}
+*/
 
 PROBLEM_3D::~PROBLEM_3D()
 {
@@ -301,9 +328,9 @@ PROBLEM_3D::~PROBLEM_3D()
 
 void PROBLEM_3D::readGridFromFiles(const char* inf, const char* xyz, const char* nver)
 {
-	if (inconsistentProblem)
-		grid.buildTestInconsistentGrid();
-	else
+	//if (inconsistentProblem)
+	//	grid.buildTestInconsistentGrid();
+	//else
 		grid.readGridFromFiles(inf, xyz, nver);
 	
 	setMatrixSize(grid.n);
@@ -326,11 +353,14 @@ void PROBLEM_3D::solveMatrix() {
 void PROBLEM_3D::showResault()
 {
 	double real_solution;
+	double sum = 0;
 	for (int i = 0; i < slae.n; i++)
 	{
 		real_solution = u_real(grid.nodes[i]);
 		printf("%.3lf %.3lf %.3lf %.15lf %.15lf %.15lf\n", grid.nodes[i].x, grid.nodes[i].y, grid.nodes[i].z, real_solution, x[i], abs(real_solution - x[i]));
+		sum += abs(real_solution - x[i]);
 	}
+	printf("Sum res:  %.15lf\n", sum);
 }
 //--------------------------------------
 void PROBLEM_3D::printResult(const char* fname)

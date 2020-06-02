@@ -46,34 +46,6 @@ static vector<vector<function<double(double, double, double)>>> gradPhi = {
 };
 
 
-// Number of interval splits in Gauss Integration
-static const uint32_t GAUSS_FRAGMENTATION = 30;
-static const int GAUSS_DEGREE_2 = 5;
-double HexagonElements::Gauss(double (*f)(double), double begin, double end)
-{
-	const double Xi[GAUSS_DEGREE_2] = { -0.9061798,-0.5384693,0,0.5384693,0.9061798 };
-	const double Ci[GAUSS_DEGREE_2] = { 0.4786287,0.2369269,0.5688888 ,0.2369269,0.4786287 };
-
-	double iLength = (end - begin) / GAUSS_FRAGMENTATION;
-	double sum = 0.0;
-	for (int i = 0; i < GAUSS_FRAGMENTATION; ++i)
-	{
-		double a = begin + i * iLength;
-		double b = begin + (i + 1) * iLength;
-
-		double ra = (b - a) / 2;
-		double su = (a + b) / 2;
-		double Q, S = 0.0;
-		for (int i = 0; i < GAUSS_DEGREE_2; i++)
-		{
-			Q = su + ra * Xi[i];
-			S += Ci[i] * f(Q);
-		}
-		sum += ra * S;
-	}
-	return sum;
-};
-
 double HexagonElements::getDeterminant()
 {
 	double result = 0;
@@ -119,6 +91,7 @@ void HexagonElements::calculateGradPhiAndPhiAtGaussPoints()
 				}
 			}
 };
+
 double HexagonElements::getIntegrand(int index, int i, int j, int numElement)
 {
 	double result = 0;
@@ -138,6 +111,31 @@ double HexagonElements::getIntegrand(int index, int i, int j, int numElement)
 	return result;
 }
 
+
+double HexagonElements::getIntegrandRightPart(int index, int i, int numElement)
+{
+	double result = 0;
+	double part[3];
+	vector<double> HcLocal(3, 0);
+	for (int w = 0; w < 8; w++)
+	{
+		for (int j = 0; j < 3; j++)
+		{
+			HcLocal[j] += phiRes[index][w] * f(grid.nodes[grid.elems[numElement].value[w]]);
+		}
+	}
+	for (int k = 0; k < 3; k++)
+	{
+		part[k] = 0;
+		for (int l = 0; l < 3; l++)
+		{
+			part[k] += inverseMatrix[k][l] * gradPhiRes[index][l][i];
+		}
+		result += part[k] * HcLocal[k];
+	}
+	result *= fabsl(determinant);
+	return result;
+};
 
 void HexagonElements::calculateJacobianMatrix(double ksi, double eta, double teta, int numElement)
 {
@@ -173,125 +171,7 @@ void HexagonElements::calculateTemplateJacobianMatrix(int index, int numElement)
 		}
 
 };
-double HexagonElements::getIntegrandRightPart(int index, int i, int numElement)
-{
-	double result = 0;
-	double part[3];
-	vector<double> HcLocal(3, 0);
-	for (int w = 0; w < 8; w++)
-	{
-		for (int j = 0; j < 3; j++)
-		{
-			HcLocal[j] += phiRes[index][w] * Hc_OfNodes[grid.elems[numElement].value[w]][j];
-		}
-	}
-	for (int k = 0; k < 3; k++)
-	{
-		part[k] = 0;
-		for (int l = 0; l < 3; l++)
-		{
-			part[k] += inverseMatrix[k][l] * gradPhiRes[index][l][i];
-		}
-		result += part[k] * HcLocal[k];
-	}
-	result *= fabsl(determinant);
-	return result;
-};
 
-
-vector<double> HexagonElements::getHcUsingGauss4(NODE* fArgs, double* Jtok, int hn, NODE X)
-{
-	vector<double> Hc;
-	Hc.resize(3, 0.0);
-	NODE h;
-	h = (fArgs[1] - fArgs[0]);
-	double Lh = h.getLengthVector();
-	double SumI[3];
-	fill_n(SumI, 3, 0);
-	for (int i = 0; i < 4; i++)
-	{
-		double SumJ[3];
-		fill_n(SumJ, 3, 0);
-		for (int j = 1; j < hn; j++)
-		{
-			NODE curX, delta;
-			curX = (fArgs[j - 1] + fArgs[j] + h * t[i]) / 2.0;
-			delta = X - curX;
-			double nominator = sqrtl(delta.x * delta.x + delta.y * delta.y + delta.z * delta.z);
-			nominator = powl(nominator, 3);
-			SumJ[0] += (Jtok[1] * delta.z - Jtok[2] * delta.y) / nominator;
-			SumJ[1] += (Jtok[2] * delta.x - Jtok[0] * delta.z) / nominator;
-			SumJ[2] += (Jtok[0] * delta.y - Jtok[1] * delta.x) / nominator;
-		}
-		for (int k = 0; k < 3; k++)
-			SumI[k] += SumJ[k] * tau[i];
-	}
-	for (int k = 0; k < 3; k++)
-		Hc[k] = SumI[k] * Lh / 2.0 / (4 * M_PI);
-
-	return Hc;
-};
-
-vector<vector<double>> HexagonElements::getHcFromOneConductor(CONDUCTOR conductor, int hn)
-{
-	vector<vector<double>> result;
-	result.resize(grid.nodes.size());
-	NODE* fArgs = new NODE[hn];
-	NODE str = conductor.str;
-	NODE end = conductor.end;
-	NODE h;
-	h = (end - str) / (hn - 1);
-	for (int i = 0; i < hn; i++)
-		fArgs[i] = str + h * i;
-
-	for (int i = 0; i < grid.nodes.size(); i++)
-		result[i] = getHcUsingGauss4(fArgs, conductor.Jtok, hn, grid.nodes[i]);
-
-	return result;
-};
-
-void HexagonElements::calculateHcFromConductors()
-{
-	Hc_OfNodes.resize(grid.nodes.size());
-	int hn = 5;
-	for (int i = 0; i < grid.nodes.size(); i++)
-	{
-		Hc_OfNodes[i].resize(3, 0);
-	}
-	for (unsigned int i = 0; i < conductors.size(); i++)
-	{
-		vector<vector<double>> HcFromOneConductor = getHcFromOneConductor(conductors[i], hn);
-		for (int j = 0; j < grid.nodes.size(); j++)
-		{
-			for (int k = 0; k < 3; k++)
-			{
-				Hc_OfNodes[j][k] += HcFromOneConductor[j][k];
-			}
-		}
-		printf_s("%d %d\n", i, conductors.size());
-	}
-}
-
-void HexagonElements::ñalculateVolumes()
-{
-	volumesOfNodes.resize(grid.nodes.size(), 0);
-	volumesOfElements.resize(grid.elems.size(), 0);
-	for (int i = 0; i < grid.elems.size(); i++)
-	{
-		auto element = grid.elems[i];
-		double volume = 0;
-		for (int index = 0; index < 64; index++)
-		{
-			calculateTemplateJacobianMatrix(index, i);
-			volume += tauProduct[index] * fabsl(getDeterminant());
-		}
-		volumesOfElements[i] = volume;
-		for (int j = 0; j < 8; j++)
-		{
-			volumesOfNodes[element.value[j]] += volumesOfElements[i];
-		}
-	}
-}
 
 void HexagonElements::setLocalMatrixAndRightPart()
 {
@@ -317,7 +197,7 @@ void HexagonElements::calculateLocal(int numElement) {
 		determinant = getDeterminant();
 		for (int i = 0; i < EL_SIZE; i++)
 		{
-			 // b[i] += tauProduct[index] * getIntegrandRightPart(index, i, numElement) * lam;
+			b[i] += tauProduct[index] * getIntegrandRightPart(index, i, numElement) ;
 			for (int j = i; j < EL_SIZE; j++)
 			{
 				double sum = tauProduct[index] * getIntegrand(index, i, j, numElement) * lam;
