@@ -13,7 +13,7 @@ int main()
 	//problem.buildPortrait();
    	problem.buildSetBasedPortrait();
 	problem.buildMatrixAndRightPart();
-	//problem.applySecondBoundaryConditions();
+	problem.applySecondBoundaryConditions();
 	problem.applyFirstBoundaryConditions();
 	problem.solveMatrix();
 	problem.showResault();

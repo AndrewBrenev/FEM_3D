@@ -4,6 +4,7 @@
 #include "Solver.h"
 #include "Grid.h"
 #include "hexagon-elements.h"
+#include "second-boundaries.h"
 #include "T-Matrix.h"
 
 const string t_matrix_config = "../input/Pipe/t-matrix/params.txt";
@@ -16,7 +17,7 @@ const string mesh_xyz_path = "../input/Pipe/mesh/xyz.dat";
 const string mesh_nver_path = "../input/Pipe/mesh/nver.dat";
 
 const string first_boundary_path = "../input/Pipe/first_boundary.txt";
-const string second_boundary_path = "../input/Pipe/second_boundary.txt";
+const string second_boundary_path = "../input/Test/second_boundary.txt";
 
 
 
@@ -67,8 +68,7 @@ public:
 
 	void applyFirstBoundaryConditions();
 	
-	// TODO
-	//void applySecondBoundaryConditions();
+	void applySecondBoundaryConditions();
 
 	void printResult(const char* fname);
 

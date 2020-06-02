@@ -6,7 +6,6 @@
 #include "stdafx.h"
 #include "grid.h"
 #include <cmath>
-#include "functional"
 
 
 class HexagonElements {

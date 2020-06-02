@@ -306,17 +306,18 @@ vector<PLANE> PROBLEM_3D::readSecondBoundaryFromFile(const char* input) {
 	return planes;
 };
 
-/* TODO
 void PROBLEM_3D::applySecondBoundaryConditions() {
 	grid.secondBoundary = readSecondBoundaryFromFile(second_boundary_path.c_str());
 
-	int i = 0;
+	SecondBoundary boundary_saver(grid);
+
 	for (auto it = grid.secondBoundary.begin(); it < grid.secondBoundary.end(); it++) {
-		//process somehow
-		i++;
+		boundary_saver.applySecondBoundaryConditions(*it);
+		for (int j = 0; j < 4; j++)
+			f[it->node_id[j]] += boundary_saver.getB(j);
 	}
 }
-*/
+
 
 PROBLEM_3D::~PROBLEM_3D()
 {

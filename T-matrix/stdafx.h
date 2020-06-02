@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <vector>
+#include "functional"
 
 #include <stdexcept>
 #include <iostream>
